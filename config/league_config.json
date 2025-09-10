@@ -1,0 +1,36 @@
+{
+  "league_name": "Fantasy Football 2025",
+  "league_id": "your_league_id_here",
+  "season": 2025,
+  "teams_count": 12,
+  "scoring_format": "PPR",
+  "playoff_teams": 6,
+  "regular_season_weeks": 14,
+  "playoff_weeks": 3,
+  "roster_settings": {
+    "qb": 1,
+    "rb": 2,
+    "wr": 2,
+    "te": 1,
+    "flex": 1,
+    "dst": 1,
+    "k": 1,
+    "bench": 6
+  },
+  "scoring_settings": {
+    "passing_yards": 0.04,
+    "passing_touchdowns": 4,
+    "rushing_yards": 0.1,
+    "rushing_touchdowns": 6,
+    "receiving_yards": 0.1,
+    "receiving_touchdowns": 6,
+    "receptions": 1,
+    "field_goals": 3,
+    "extra_points": 1
+  },
+  "data_sources": {
+    "api_enabled": false,
+    "manual_entry": true,
+    "csv_import": true
+  }
+}
