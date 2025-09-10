@@ -10,8 +10,10 @@ This project uses the Sleeper API to analyze fantasy football leagues and provid
 
 - **Quick Scan Mode**: Daily trending player analysis (perfect for morning checks)
 - **Full Analysis Mode**: Comprehensive roster evaluation with position-specific swap suggestions
+- **Trending Drops Detection**: Alerts when your players are being dropped frequently
 - **Real-time Data**: Uses Sleeper API for up-to-date trending player information
 - **Smart Filtering**: Only shows players actually available in your specific league
+- **Rate Limiting Protection**: Respects Sleeper API limits with built-in safeguards
 
 ## 📋 Requirements
 
@@ -75,6 +77,29 @@ Fetching trending players...
 1. Calvin Austin (WR) - PIT - 1,691,811 adds
 2. Harold Fannin (TE) - CLE - 1,641,705 adds
 3. Kenneth Gainwell (RB) - PIT - 751,328 adds
+
+⚠️  YOUR PLAYERS BEING DROPPED:
+❌ Problem Player (WR) - NYJ - 45,000 drops
+Consider cutting these players before they lose more value!
+
+✅ None of your other players are trending downward.
+```
+
+### Full Analysis
+```
+📋 YOUR ROSTER (17 players):
+QB: Brock Purdy (SF), Geno Smith (LV)
+RB: Breece Hall (NYJ), D'Andre Swift (CHI)
+WR: Garrett Wilson (NYJ), Terry McLaurin (WAS), Problem Player (NYJ) ⚠️
+
+⚠️  ROSTER ALERTS - Players Being Dropped:
+❌ Problem Player (WR) - NYJ - 45,000 drops
+💡 Consider cutting these players for trending adds!
+
+🔄 SWAP RECOMMENDATIONS:
+WR Options:
+  ⬆️  Calvin Austin (PIT) - 1,691,811 adds
+  Your WRs: Garrett Wilson, Terry McLaurin
 ```
 
 ## 🤖 AI Integration
@@ -84,6 +109,8 @@ This project leverages AI assistance for:
 - Code optimization and documentation
 - Strategic waiver wire recommendations
 - Fantasy football trend analysis
+- Roster management alerts (trending drops detection)
+- Rate limiting and API best practices
 
 ## 📁 Project Structure
 
@@ -101,17 +128,44 @@ The script can be easily modified to:
 - Adjust trending time windows
 - Filter by specific positions
 - Add custom scoring analysis
+- Modify rate limiting settings
+- Set up automated alerts
 
 ## 📈 Tips for Success
 
 1. **Run quick scans daily** - Catch breakout players before others
 2. **Use full analysis before waivers** - Make strategic roster decisions
 3. **Monitor trending counts** - Higher counts indicate stronger consensus
-4. **Focus on position needs** - Target areas where your roster is weakest
+4. **Watch for drop alerts** - Cut players before they lose more value
+5. **Focus on position needs** - Target areas where your roster is weakest
+6. **Act fast on high-volume trends** - Players with 500K+ adds are likely must-haves
 
 ## 🏆 About GitHub Gridiron
 
-"GitHub Gridiron" represents the fusion of AI-powered analysis with traditional fantasy football strategy. This project showcases how modern tools can enhance fantasy sports decision-making.
+"GitHub Gridiron" represents the fusion of AI-powered analysis with traditional fantasy football strategy. This project showcases how modern tools can enhance fantasy sports decision-making through:
+
+- **Predictive Analytics**: Using crowd wisdom (trending data) to predict player value
+- **Risk Management**: Early warning system for dropping player values  
+- **Automated Insights**: AI-driven recommendations for roster optimization
+- **Data-Driven Decisions**: Objective analysis over gut feelings
+
+The project demonstrates practical AI application in sports analytics, combining real-time data processing with strategic decision-making algorithms.
+
+## 🔨 Development Guidelines
+
+### For Contributors & AI Assistance
+- **Always update README.md** when adding features or making significant changes
+- Maintain comprehensive code documentation with docstrings and comments
+- Follow rate limiting best practices for API calls
+- Test new features thoroughly before committing
+- Keep user experience and practical utility as top priorities
+- Use descriptive variable names and clear function organization
+
+### Code Standards
+- Add step-by-step comments for complex logic
+- Include error handling with user-friendly messages
+- Maintain consistent naming conventions throughout
+- Document all functions with purpose, parameters, and return values
 
 ## 📝 License
 

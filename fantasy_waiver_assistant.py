@@ -21,12 +21,32 @@ Author: GitHub Gridiron (AI-Assisted Fantasy Team)
 
 import requests
 import sys
+import time
 from datetime import datetime
 
 # Configuration - Update these for your league
 SLEEPER_API_BASE = "https://api.sleeper.app/v1"
 USERNAME = "ryanmcpeck"  # Your Sleeper username
 SEASON = "2025"          # Current NFL season
+
+# Rate limiting protection (Sleeper allows 1000 calls/minute)
+API_CALL_DELAY = 0.1  # Small delay between API calls (100ms)
+
+def safe_api_call(url, params=None):
+    """
+    Make a rate-limited API call to prevent hitting Sleeper's 1000 calls/minute limit.
+    
+    Args:
+        url (str): API endpoint URL
+        params (dict): Optional query parameters
+        
+    Returns:
+        dict: JSON response from API
+    """
+    time.sleep(API_CALL_DELAY)  # Small delay to respect rate limits
+    resp = requests.get(url, params=params)
+    resp.raise_for_status()
+    return resp.json()
 
 def get_user_id(username):
     """
@@ -39,9 +59,7 @@ def get_user_id(username):
         str: Your unique Sleeper user ID
     """
     url = f"{SLEEPER_API_BASE}/user/{username}"
-    resp = requests.get(url)
-    resp.raise_for_status()
-    return resp.json()["user_id"]
+    return safe_api_call(url)["user_id"]
 
 def get_leagues(user_id, season):
     """
@@ -55,9 +73,7 @@ def get_leagues(user_id, season):
         list: List of league dictionaries containing league info
     """
     url = f"{SLEEPER_API_BASE}/user/{user_id}/leagues/nfl/{season}"
-    resp = requests.get(url)
-    resp.raise_for_status()
-    return resp.json()
+    return safe_api_call(url)
 
 def get_nfl_players():
     """
@@ -68,9 +84,7 @@ def get_nfl_players():
         dict: Dictionary where keys are player IDs and values are player info
     """
     url = f"{SLEEPER_API_BASE}/players/nfl"
-    resp = requests.get(url)
-    resp.raise_for_status()
-    return resp.json()
+    return safe_api_call(url)
 
 def get_trending_players(sport="nfl", add_drop="add", hours=24, limit=25):
     """
@@ -88,9 +102,21 @@ def get_trending_players(sport="nfl", add_drop="add", hours=24, limit=25):
     """
     url = f"{SLEEPER_API_BASE}/players/{sport}/trending/{add_drop}"
     params = {"lookback_hours": hours, "limit": limit}
-    resp = requests.get(url, params=params)
-    resp.raise_for_status()
-    return resp.json()
+    return safe_api_call(url, params)
+
+def get_trending_drops(hours=24, limit=25):
+    """
+    Get players that are being dropped frequently (trending downward).
+    Useful for identifying players to consider cutting from your roster.
+    
+    Args:
+        hours (int): Lookback period in hours (default: 24)
+        limit (int): Max number of players to return (default: 25)
+        
+    Returns:
+        list: List of players being dropped frequently
+    """
+    return get_trending_players(add_drop="drop", hours=hours, limit=limit)
 
 def find_available_players(league_id, rosters, all_players, trending_adds):
     """
@@ -132,6 +158,42 @@ def find_available_players(league_id, rosters, all_players, trending_adds):
                 })
     
     return available_trending
+
+def check_your_players_trending_down(your_roster_players, all_players, trending_drops):
+    """
+    Check if any of your rostered players are trending downward (being dropped).
+    This helps identify players you might want to cut before they lose more value.
+    
+    Args:
+        your_roster_players (list): Your current roster player IDs
+        all_players (dict): Complete NFL player database
+        trending_drops (list): Players being dropped frequently
+        
+    Returns:
+        list: Your players that are trending downward
+    """
+    your_players_dropping = []
+    
+    # Get trending drop player IDs for easy lookup
+    trending_drop_ids = {player_data['player_id'] for player_data in trending_drops}
+    
+    # Check if any of your players are in the trending drops list
+    for player_id in your_roster_players:
+        if player_id in trending_drop_ids and player_id in all_players:
+            # Find the drop data for this player
+            drop_data = next((p for p in trending_drops if p['player_id'] == player_id), None)
+            if drop_data:
+                player_info = all_players[player_id]
+                name = f"{player_info.get('first_name', '')} {player_info.get('last_name', '')}".strip()
+                your_players_dropping.append({
+                    'player_id': player_id,
+                    'name': name,
+                    'position': player_info.get('position', 'N/A'),
+                    'team': player_info.get('team', 'N/A'),
+                    'drop_count': drop_data.get('count', 0)
+                })
+    
+    return your_players_dropping
 
 def analyze_roster_vs_available(your_roster_players, available_players, all_players):
     """
@@ -197,7 +259,7 @@ def quick_scan_mode():
     
     # Step 2: Get all rosters to see who's available
     rosters_url = f"{SLEEPER_API_BASE}/league/{league_id}/rosters"
-    rosters = requests.get(rosters_url).json()
+    rosters = safe_api_call(rosters_url)
     
     # Step 3: Find your specific roster
     your_roster = None
@@ -209,18 +271,33 @@ def quick_scan_mode():
     # Step 4: Get trending data (limited set for speed)
     print("Fetching trending players...")
     trending_adds = get_trending_players(limit=10)  # Only top 10 for speed
+    trending_drops = get_trending_drops(limit=10)   # Check for your players being dropped
     all_players = get_nfl_players()
     
     # Step 5: Find which trending players are actually available
     available_players = find_available_players(league_id, rosters, all_players, trending_adds)
     
-    # Step 6: Display results
+    # Step 6: Check if any of your players are trending down
+    your_dropping_players = check_your_players_trending_down(
+        your_roster['players'], all_players, trending_drops
+    )
+    
+    # Step 7: Display results
     if available_players:
         print(f"\n🔥 HOT PICKUPS RIGHT NOW:")
         for i, player in enumerate(available_players[:5], 1):
             print(f"{i}. {player['name']} ({player['position']}) - {player['team']} - {player['trend_count']:,} adds")
     else:
         print("No trending players available on waivers right now.")
+    
+    # Step 8: Alert about your players being dropped
+    if your_dropping_players:
+        print(f"\n⚠️  YOUR PLAYERS BEING DROPPED:")
+        for player in your_dropping_players:
+            print(f"❌ {player['name']} ({player['position']}) - {player['team']} - {player['drop_count']:,} drops")
+        print("Consider cutting these players before they lose more value!")
+    else:
+        print(f"\n✅ None of your players are trending downward.")
 
 def full_analysis_mode():
     """
@@ -245,7 +322,7 @@ def full_analysis_mode():
     league_id = league['league_id']
     
     rosters_url = f"{SLEEPER_API_BASE}/league/{league_id}/rosters"
-    rosters = requests.get(rosters_url).json()
+    rosters = safe_api_call(rosters_url)
     
     your_roster = None
     for roster in rosters:
@@ -257,8 +334,12 @@ def full_analysis_mode():
     print("Loading player data...")
     all_players = get_nfl_players()
     trending_adds = get_trending_players(limit=25)  # More detailed analysis
+    trending_drops = get_trending_drops(limit=25)   # Check for players being dropped
     
     available_players = find_available_players(league_id, rosters, all_players, trending_adds)
+    your_dropping_players = check_your_players_trending_down(
+        your_roster['players'], all_players, trending_drops
+    )
     
     # Step 3: Display your current roster organized by position
     if your_roster.get('players'):
@@ -271,15 +352,29 @@ def full_analysis_mode():
                 pos = player_info.get('position', 'N/A')
                 team = player_info.get('team', 'N/A')
                 
+                # Mark players that are trending down
+                is_dropping = any(p['player_id'] == player_id for p in your_dropping_players)
+                display_name = f"{name} ({team})"
+                if is_dropping:
+                    display_name += " ⚠️"
+                
                 if pos not in roster_by_pos:
                     roster_by_pos[pos] = []
-                roster_by_pos[pos].append(f"{name} ({team})")
+                roster_by_pos[pos].append(display_name)
         
         # Display roster by position for easy analysis
         for pos, players in roster_by_pos.items():
             print(f"{pos}: {', '.join(players)}")
     
-    # Step 4: Provide detailed swap analysis
+    # Step 4: Show trending drop alerts
+    if your_dropping_players:
+        print(f"\n⚠️  ROSTER ALERTS - Players Being Dropped:")
+        print("-" * 60)
+        for player in your_dropping_players:
+            print(f"❌ {player['name']} ({player['position']}) - {player['team']} - {player['drop_count']:,} drops")
+        print("💡 Consider cutting these players for trending adds!")
+    
+    # Step 5: Provide detailed swap analysis
     if available_players:
         analyze_roster_vs_available(your_roster['players'], available_players, all_players)
 
