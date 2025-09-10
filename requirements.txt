@@ -1,0 +1,25 @@
+# Core data analysis packages
+pandas>=2.0.0
+numpy>=1.24.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Dashboard and visualization
+streamlit>=1.28.0
+plotly>=5.17.0
+
+# Data processing and utilities
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+openpyxl>=3.1.0
+
+# Jupyter for analysis notebooks
+jupyter>=1.0.0
+ipykernel>=6.25.0
+
+# Testing
+pytest>=7.4.0
+
+# Development tools
+black>=23.0.0
+flake8>=6.0.0
