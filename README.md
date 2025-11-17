@@ -1,19 +1,21 @@
-# Fantasy Football 2025 - GitHub Gridiron 🏈
+# FantasyAI Pro - Advanced Fantasy Football Analysis Suite 🤖
 
-AI-powered fantasy football analysis and waiver wire assistant for the 2025 season.
+AI-powered fantasy football analysis combining trending data, performance analytics, and strategic planning for the 2025 season.
 
 ## 🎯 About
 
-This project uses the Sleeper API to analyze fantasy football leagues and provide data-driven waiver wire recommendations. Built as an AI-assisted fantasy football experiment for the "GitHub Gridiron" team.
+FantasyAI Pro is an advanced fantasy football analysis tool that uses the Sleeper API to provide data-driven roster optimization. Built as an AI-assisted fantasy football experiment for the "GitHub Gridiron" team, combining multiple analysis modes for comprehensive roster management.
 
 ## 🚀 Features
 
 - **Quick Scan Mode**: Daily trending player analysis (perfect for morning checks)
 - **Full Analysis Mode**: Comprehensive roster evaluation with position-specific swap suggestions
-- **Trending Drops Detection**: Alerts when your players are being dropped frequently
-- **Real-time Data**: Uses Sleeper API for up-to-date trending player information
+- **Performance Analytics**: Track actual fantasy points to identify underperforming players
+- **Visual Performance Charts**: Weekly point charts showing trends for each roster player
+- **Weekly Game Plan Generator**: Comprehensive strategy planning after games complete
+- **Trending Analysis**: Real-time player movement tracking (adds/drops)
 - **Smart Filtering**: Only shows players actually available in your specific league
-- **Rate Limiting Protection**: Respects Sleeper API limits with built-in safeguards
+- **AI-Powered Insights**: Data-driven recommendations for optimal roster decisions
 
 ## 📋 Requirements
 
@@ -37,7 +39,7 @@ This project uses the Sleeper API to analyze fantasy football leagues and provid
    ```
 
 3. **Configure your settings**
-   - Open `fantasy_waiver_assistant.py`
+   - Open `fantasyai_pro.py`
    - Update `USERNAME` with your Sleeper username
    - Update `SEASON` if needed (defaults to 2025)
 
@@ -45,21 +47,39 @@ This project uses the Sleeper API to analyze fantasy football leagues and provid
 
 ### Quick Daily Check
 ```bash
-python fantasy_waiver_assistant.py
+python fantasyai_pro.py
 # or
-python fantasy_waiver_assistant.py quick
+python fantasyai_pro.py quick
 ```
 Perfect for daily morning checks to catch trending players early.
 
 ### Full Roster Analysis
 ```bash
-python fantasy_waiver_assistant.py full
+python fantasyai_pro.py full
 ```
 Comprehensive analysis with detailed swap recommendations. Best used before waiver deadlines.
 
+### Performance Analysis
+```bash
+python fantasyai_pro.py performance
+```
+Analyzes actual fantasy points scored to identify consistently underperforming players.
+
+### Visual Performance Chart
+```bash
+python fantasyai_pro.py chart
+```
+Creates visual charts showing weekly fantasy points for each player over recent weeks.
+
+### Weekly Game Plan
+```bash
+python fantasyai_pro.py gameplan
+```
+Generates comprehensive weekly strategy with prioritized actions and schedules.
+
 ### Help
 ```bash
-python fantasy_waiver_assistant.py help
+python fantasyai_pro.py help
 ```
 
 ## 📊 Example Output
@@ -102,6 +122,43 @@ WR Options:
   Your WRs: Garrett Wilson, Terry McLaurin
 ```
 
+### Performance Analysis
+```
+📈 PERFORMANCE ANALYSIS - 2025-11-16 21:30
+============================================================
+
+📊 PERFORMANCE ANALYSIS - Last 3 Weeks (Weeks 9-11)
+------------------------------------------------------------
+⚠️  UNDERPERFORMING PLAYERS (< 8.0 pts):
+❌ Jerry Jeudy (WR) - CLE - 3/3 weeks below threshold
+   Recent poor weeks: 2.4, 1.8 pts
+❌ Calvin Austin (WR) - PIT - 2/3 weeks below threshold
+   Recent poor weeks: 3.1, 0.6 pts
+
+💡 RECOMMENDATION: Consider dropping players with 2+ poor weeks for trending adds!
+
+🏆 PERFORMANCE CONTEXT:
+Consider combining this analysis with trending data for optimal decisions.
+Players can have good underlying performance but still be droppable if better options emerge.
+```
+
+### Visual Performance Chart
+```
+📈 PERFORMANCE ANALYSIS - 2025-11-16 23:45
+============================================================
+Loading player data and analyzing recent performance...
+
+📊 PERFORMANCE ANALYSIS - Last 3 Weeks (Weeks 9-11)
+------------------------------------------------------------
+✅ No players consistently underperforming (below 8.0 pts)
+Your roster is performing well from a points perspective!
+
+📊 Generating performance chart...
+📈 Performance chart saved as: weekly_performance_chart_20251116_2345.png
+📈 Chart shows weekly fantasy points for each player over recent weeks
+🔴 Red dashed line shows poor performance threshold (8.0 pts)
+```
+
 ## 🤖 AI Integration
 
 This project leverages AI assistance for:
@@ -116,7 +173,9 @@ This project leverages AI assistance for:
 
 ```
 fantasy-football-2025/
-├── fantasy_waiver_assistant.py    # Main analysis script
+├── fantasyai_pro.py               # Main analysis script
+├── charts/                        # Generated performance charts
+├── .copilot-instructions.md       # AI development guidelines
 ├── .venv/                         # Python virtual environment
 └── README.md                      # This file
 ```
@@ -131,14 +190,20 @@ The script can be easily modified to:
 - Modify rate limiting settings
 - Set up automated alerts
 
-## 📈 Tips for Success
+## 💡 Weekly Success Workflow
 
-1. **Run quick scans daily** - Catch breakout players before others
-2. **Use full analysis before waivers** - Make strategic roster decisions
-3. **Monitor trending counts** - Higher counts indicate stronger consensus
-4. **Watch for drop alerts** - Cut players before they lose more value
-5. **Focus on position needs** - Target areas where your roster is weakest
-6. **Act fast on high-volume trends** - Players with 500K+ adds are likely must-haves
+1. **Monday Night**: Run `gameplan` after games complete to get weekly strategy
+2. **Tuesday Morning**: Run `quick` to catch early trending players
+3. **Tuesday Evening**: Execute drops and claims based on game plan
+4. **Wednesday**: Run `full` analysis to review waiver results
+5. **Thursday**: Run `performance` to validate roster decisions
+6. **Weekend**: Generate `chart` for visual performance tracking
+7. **Sunday**: Set optimal lineup based on all analysis
+
+### Daily Maintenance:
+- **Morning**: `quick` scan for trending opportunities
+- **Evening**: Monitor player news and injury reports
+- **Weekly**: Full performance review with charts
 
 ## 🏆 About GitHub Gridiron
 
