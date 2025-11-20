@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.pytest_cache/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Charts output (keep folder, ignore files)
+charts/*.png
+charts/*.jpg
+charts/*.svg
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp

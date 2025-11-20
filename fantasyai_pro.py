@@ -33,6 +33,146 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from collections import defaultdict
 
+# All functionality is now integrated into this single file
+ENHANCED_FEATURES = True
+
+# === INJURY TRACKING FUNCTIONS ===
+
+def get_injury_status(player_ids, all_players):
+    """Get current injury status for specified players."""
+    injured_players = []
+    
+    for player_id in player_ids:
+        if player_id in all_players:
+            player_info = all_players[player_id]
+            
+            injury_status = player_info.get('injury_status', None)
+            injury_notes = player_info.get('injury_notes', '')
+            injury_body_part = player_info.get('injury_body_part', '')
+            
+            if injury_status and injury_status.lower() != 'healthy':
+                name = f"{player_info.get('first_name', '')} {player_info.get('last_name', '')}".strip()
+                injured_players.append({
+                    'player_id': player_id,
+                    'name': name,
+                    'position': player_info.get('position', 'N/A'),
+                    'team': player_info.get('team', 'N/A'),
+                    'injury_status': injury_status,
+                    'injury_notes': injury_notes,
+                    'injury_body_part': injury_body_part
+                })
+    
+    return injured_players
+
+def print_injury_report(injured_players):
+    """Print a formatted injury report."""
+    if not injured_players:
+        print("✅ No injury concerns for your roster players!")
+        return
+    
+    print(f"\n🚑 INJURY REPORT ({len(injured_players)} players)")
+    print("=" * 50)
+    
+    high_risk = [p for p in injured_players if p['injury_status'].lower() in ['out', 'ir', 'doubtful', 'suspended']]
+    medium_risk = [p for p in injured_players if p['injury_status'].lower() in ['questionable', 'limited']]
+    low_risk = [p for p in injured_players if p['injury_status'].lower() in ['probable', 'healthy', 'gtd']]
+    
+    if high_risk:
+        print("\n🔴 HIGH RISK - Consider Dropping/Benching:")
+        for player in high_risk:
+            print(f"❌ {player['name']} ({player['position']}) - {player['team']}")
+            print(f"   Status: {player['injury_status']}")
+            if player['injury_body_part']:
+                print(f"   Injury: {player['injury_body_part']}")
+            if player['injury_notes']:
+                print(f"   Notes: {player['injury_notes'][:100]}...")
+    
+    if medium_risk:
+        print("\n🟡 MEDIUM RISK - Monitor Closely:")
+        for player in medium_risk:
+            print(f"⚠️  {player['name']} ({player['position']}) - {player['team']}")
+            print(f"   Status: {player['injury_status']}")
+            if player['injury_body_part']:
+                print(f"   Injury: {player['injury_body_part']}")
+    
+    if low_risk:
+        print("\n🟢 LOW RISK - Keep on Roster:")
+        for player in low_risk:
+            print(f"✅ {player['name']} ({player['position']}) - {player['team']}")
+            print(f"   Status: {player['injury_status']}")
+
+# === TRADE ANALYSIS FUNCTIONS ===
+
+def calculate_player_value(player_id, all_players, week_stats, trending_data):
+    """Calculate a comprehensive fantasy value score for a player."""
+    if player_id not in all_players:
+        return 0
+    
+    player_info = all_players[player_id]
+    position = player_info.get('position', '')
+    
+    position_values = {'QB': 1.0, 'RB': 1.5, 'WR': 1.3, 'TE': 1.2, 'K': 0.3, 'DEF': 0.4}
+    base_value = position_values.get(position, 1.0)
+    
+    performance_value = 0
+    if player_id in week_stats:
+        stats = week_stats[player_id]
+        recent_points = stats.get('pts_ppr', stats.get('pts_std', stats.get('pts_half_ppr', 0)))
+        performance_value = recent_points / 20.0
+    
+    trending_value = 0
+    if trending_data:
+        add_count = trending_data.get('adds', {}).get(player_id, 0)
+        drop_count = trending_data.get('drops', {}).get(player_id, 0)
+        net_trending = (add_count - drop_count) / 1000000.0
+        trending_value = max(0, net_trending)
+    
+    age = player_info.get('age', 27)
+    age_factor = max(0, (32 - age) / 10.0)
+    
+    injury_penalty = 0
+    injury_status = player_info.get('injury_status', '')
+    if injury_status and injury_status.lower() in ['out', 'ir', 'suspended']:
+        injury_penalty = 0.5
+    elif injury_status and injury_status.lower() in ['doubtful', 'questionable']:
+        injury_penalty = 0.2
+    
+    total_value = (base_value + performance_value + trending_value + age_factor) * (1 - injury_penalty)
+    return max(0, total_value)
+
+def find_trade_targets(your_roster, league_rosters, all_players, week_stats, trending_data, position_need=None):
+    """Identify potential trade targets based on your needs."""
+    trade_targets = []
+    
+    for roster in league_rosters:
+        if not roster.get('players') or roster.get('owner_id') in [your_roster]:
+            continue
+            
+        for player_id in roster['players']:
+            if player_id in all_players:
+                player_info = all_players[player_id]
+                position = player_info.get('position', '')
+                
+                if position_need and position != position_need:
+                    continue
+                
+                player_value = calculate_player_value(player_id, all_players, week_stats, trending_data)
+                
+                if player_value > 1.0:
+                    name = f"{player_info.get('first_name', '')} {player_info.get('last_name', '')}".strip()
+                    
+                    trade_targets.append({
+                        'player_id': player_id,
+                        'name': name,
+                        'position': position,
+                        'team': player_info.get('team', 'N/A'),
+                        'value': player_value,
+                        'owner_id': roster.get('owner_id')
+                    })
+    
+    trade_targets.sort(key=lambda x: x['value'], reverse=True)
+    return trade_targets[:20]
+
 # Configuration - Update these for your league
 SLEEPER_API_BASE = "https://api.sleeper.app/v1"
 USERNAME = "ryanmcpeck"  # Your Sleeper username
@@ -841,6 +981,10 @@ def main():
             create_demo_performance_chart()
         elif mode == "gameplan" or mode == "g":
             generate_weekly_gameplan()
+        elif mode == "enhanced" or mode == "e":
+            enhanced_analysis_mode()
+        elif mode == "lineup" or mode == "l":
+            lineup_optimizer_mode()
         elif mode == "help" or mode == "h":
             print_help()
         else:
@@ -860,6 +1004,8 @@ def print_help():
     print("  performance, p - Performance analytics (actual points)")
     print("  chart, c       - Visual performance charts")
     print("  demo, d        - Demo charts with sample data")
+    print("  enhanced, e    - NEW! Enhanced analysis with injuries & trades")
+    print("  lineup, l      - NEW! Lineup optimizer (bench vs starters)")
     print("  gameplan, g    - Weekly game plan generator")
     print("  help, h        - Show this help")
     
@@ -867,20 +1013,279 @@ def print_help():
     print("  python fantasyai_pro.py                 # Quick scan")
     print("  python fantasyai_pro.py full            # Full analysis")
     print("  python fantasyai_pro.py performance     # Performance analysis")
+    print("  python fantasyai_pro.py enhanced        # Enhanced analysis (injuries + trades)")
     print("  python fantasyai_pro.py chart           # Visual charts")
     print("  python fantasyai_pro.py gameplan        # Weekly game plan")
     
     print("\n🎯 WEEKLY WORKFLOW:")
     print("  1. Daily: Run 'quick' to catch trending players")
-    print("  2. Tuesday: Run 'performance' to identify underperformers")
+    print("  2. Tuesday: Run 'enhanced' for comprehensive injury + trade analysis")
     print("  3. Wednesday: Run 'full' before waiver deadlines")
     print("  4. Weekly: Generate 'chart' for visual analysis")
+    print("  5. Sunday: Use 'performance' to review lineup decisions")
     
     print("\n📊 DATA INSIGHTS:")
     print("  • Trending counts = how many managers added each player")
     print("  • Performance threshold = 8.0 fantasy points")
     print("  • Charts show 6-week performance trends")
     print("  🔴 Red line indicates poor performance threshold")
+
+def enhanced_analysis_mode():
+    """
+    Enhanced analysis mode with injury reports and trade suggestions.
+    Combines all analysis types for comprehensive roster management.
+    """
+    print(f"\n🚀 ENHANCED ANALYSIS - {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    print("=" * 60)
+    
+    if not ENHANCED_FEATURES:
+        print("❌ Enhanced features not available. Install injury_tracker and trade_analyzer modules.")
+        return
+    
+    # Step 1: Get league and roster data
+    user_id = get_user_id(USERNAME)
+    leagues = get_leagues(user_id, SEASON)
+    league = leagues[0]
+    league_id = league['league_id']
+    
+    rosters_url = f"{SLEEPER_API_BASE}/league/{league_id}/rosters"
+    rosters = safe_api_call(rosters_url)
+    
+    your_roster = None
+    for roster in rosters:
+        if roster.get('owner_id') == user_id:
+            your_roster = roster
+            break
+    
+    if not your_roster or not your_roster.get('players'):
+        print("❌ Could not find your roster!")
+        return
+    
+    print("Loading comprehensive data...")
+    all_players = get_nfl_players()
+    trending_adds = get_trending_players(limit=25)
+    trending_drops = get_trending_drops(limit=25)
+    current_week = get_current_nfl_week()
+    week_stats = get_league_stats(league_id, current_week)
+    
+    # Step 2: Injury Analysis
+    print("\n🏥 INJURY ANALYSIS")
+    print("-" * 40)
+    injured_players = get_injury_status(your_roster['players'], all_players)
+    print_injury_report(injured_players)
+    
+    # Step 3: Performance Analysis (quick version)
+    print("\n📈 PERFORMANCE SNAPSHOT")
+    print("-" * 40)
+    poor_performers = analyze_player_performance(
+        your_roster['players'], league_id, all_players, weeks_back=2
+    )
+    
+    critical_drops = [p for p in poor_performers if p['total_poor_weeks'] >= 2]
+    if critical_drops:
+        print("🚨 CRITICAL UNDERPERFORMERS:")
+        for player in critical_drops[:3]:
+            print(f"❌ {player['name']} ({player['position']}) - {player['total_poor_weeks']}/2 poor weeks")
+    else:
+        print("✅ No critical underperformers in last 2 weeks")
+    
+    # Step 4: Trade Target Analysis
+    print("\n💼 TRADE OPPORTUNITIES")
+    print("-" * 40)
+    
+    # Build trending data for trade analysis
+    trending_data = {
+        'adds': {p['player_id']: p.get('count', 0) for p in trending_adds},
+        'drops': {p['player_id']: p.get('count', 0) for p in trending_drops}
+    }
+    
+    # Find trade targets by position need
+    positions = ['QB', 'RB', 'WR', 'TE']
+    for pos in positions:
+        targets = find_trade_targets(
+            your_roster['players'], rosters, all_players, 
+            week_stats, trending_data, position_need=pos
+        )
+        
+        if targets:
+            print(f"\n📊 Top {pos} Trade Targets:")
+            for target in targets[:3]:
+                print(f"⭐ {target['name']} - {target['team']} (Value: {target['value']:.2f})")
+    
+    # Step 5: Waiver Wire + Trade Combo Recommendations
+    print("\n🎯 STRATEGIC RECOMMENDATIONS")
+    print("-" * 40)
+    
+    # Available players
+    available_players = find_available_players(league_id, rosters, all_players, trending_adds)
+    
+    if available_players:
+        print("🔥 IMMEDIATE WAIVER ADDS:")
+        for player in available_players[:3]:
+            print(f"➕ {player['name']} ({player['position']}) - {player['trend_count']:,} adds")
+    
+    # Players trending down that you own
+    your_dropping_players = check_your_players_trending_down(
+        your_roster['players'], all_players, trending_drops
+    )
+    
+    if your_dropping_players:
+        print("\n📉 CONSIDER TRADING/DROPPING:")
+        for player in your_dropping_players:
+            print(f"⚠️ {player['name']} ({player['position']}) - {player['drop_count']:,} drops")
+    
+    # Injury-based opportunities
+    if injured_players:
+        high_risk_injuries = [p for p in injured_players if p['injury_status'].lower() in ['out', 'ir', 'doubtful']]
+        if high_risk_injuries:
+            print("\n🏥 INJURY-BASED MOVES:")
+            print("Consider handcuffs or replacements for these players:")
+            for player in high_risk_injuries:
+                print(f"🚑 {player['name']} ({player['position']}) - {player['injury_status']}")
+    
+    print(f"\n💡 SUMMARY:")
+    print(f"Run 'python fantasyai_pro.py chart' for visual performance analysis")
+    print(f"Run 'python fantasyai_pro.py gameplan' for weekly action plan")
+    print(f"Enhanced analysis complete! 🎯")
+
+def lineup_optimizer_mode():
+    """
+    Lineup optimizer that compares bench vs starter performance to suggest optimal lineups.
+    Uses recent performance data to recommend the best possible starting lineup.
+    """
+    print(f"\n🎯 LINEUP OPTIMIZER - {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    print("=" * 60)
+    
+    # Step 1: Get roster data
+    user_id = get_user_id(USERNAME)
+    leagues = get_leagues(user_id, SEASON)
+    league = leagues[0]
+    league_id = league['league_id']
+    
+    rosters_url = f"{SLEEPER_API_BASE}/league/{league_id}/rosters"
+    rosters = safe_api_call(rosters_url)
+    
+    your_roster = None
+    for roster in rosters:
+        if roster.get('owner_id') == user_id:
+            your_roster = roster
+            break
+    
+    if not your_roster or not your_roster.get('players'):
+        print("❌ Could not find your roster!")
+        return
+    
+    print("Analyzing player performance for optimal lineup...")
+    all_players = get_nfl_players()
+    
+    # Step 2: Get recent performance data for all your players
+    current_week = get_current_nfl_week()
+    player_averages = {}
+    
+    # Calculate 3-week averages
+    for week in range(max(1, current_week - 2), current_week + 1):
+        week_stats = get_league_stats(league_id, week)
+        if not week_stats:
+            continue
+            
+        for player_id in your_roster['players']:
+            if player_id in week_stats and player_id in all_players:
+                if player_id not in player_averages:
+                    player_averages[player_id] = {'points': [], 'info': all_players[player_id]}
+                
+                stats = week_stats[player_id]
+                points = stats.get('pts_ppr', stats.get('pts_std', stats.get('pts_half_ppr', 0)))
+                player_averages[player_id]['points'].append(points)
+    
+    # Step 3: Calculate averages and organize by position
+    positions = {'QB': [], 'RB': [], 'WR': [], 'TE': [], 'K': [], 'DEF': []}
+    
+    for player_id, data in player_averages.items():
+        if data['points']:
+            avg_points = sum(data['points']) / len(data['points'])
+            player_info = data['info']
+            position = player_info.get('position', 'N/A')
+            name = f"{player_info.get('first_name', '')} {player_info.get('last_name', '')}".strip()
+            
+            # Check injury status
+            injury_status = player_info.get('injury_status', '')
+            is_injured = injury_status and injury_status.lower() in ['out', 'ir', 'doubtful']
+            
+            player_data = {
+                'name': name,
+                'avg_points': avg_points,
+                'recent_points': data['points'],
+                'team': player_info.get('team', 'N/A'),
+                'injured': is_injured,
+                'injury_status': injury_status
+            }
+            
+            if position in positions:
+                positions[position].append(player_data)
+    
+    # Step 4: Sort by average points and display optimal lineup
+    for pos in positions:
+        if positions[pos]:
+            positions[pos].sort(key=lambda x: x['avg_points'], reverse=True)
+    
+    print("\n🏆 OPTIMAL LINEUP (Based on 3-Week Average)")
+    print("=" * 50)
+    
+    lineup_spots = {
+        'QB': 1, 'RB': 2, 'WR': 2, 'TE': 1, 'K': 1, 'DEF': 1
+    }
+    
+    starters = []
+    bench_players = []
+    
+    for pos, count in lineup_spots.items():
+        if pos in positions and positions[pos]:
+            print(f"\n{pos} Rankings:")
+            available_players = [p for p in positions[pos] if not p['injured']]
+            
+            for i, player in enumerate(positions[pos][:min(count + 2, len(positions[pos]))]):
+                status = "🚑 INJURED" if player['injured'] else ""
+                starter_mark = "⭐ START" if i < count and not player['injured'] else ""
+                
+                print(f"{i+1:2d}. {player['name']} ({player['team']}) - {player['avg_points']:.1f} avg {status} {starter_mark}")
+                
+                if i < count and not player['injured']:
+                    starters.append(player)
+                else:
+                    bench_players.append(player)
+    
+    # Step 5: Flex recommendation
+    print(f"\n🎯 FLEX CONSIDERATION:")
+    print("Best remaining players for flex spot:")
+    
+    flex_candidates = []
+    for pos in ['RB', 'WR', 'TE']:
+        if pos in positions:
+            remaining = [p for p in positions[pos] if not p['injured']][lineup_spots.get(pos, 0):]
+            flex_candidates.extend(remaining[:2])  # Top 2 remaining at each position
+    
+    flex_candidates.sort(key=lambda x: x['avg_points'], reverse=True)
+    
+    for i, player in enumerate(flex_candidates[:3]):
+        print(f"{i+1}. {player['name']} ({player['team']}) - {player['avg_points']:.1f} avg")
+    
+    # Step 6: Lineup vs bench analysis
+    print(f"\n📊 STARTER vs BENCH ANALYSIS:")
+    print("=" * 50)
+    
+    if len(starters) > 0:
+        starter_avg = sum(p['avg_points'] for p in starters) / len(starters)
+        print(f"Average starter points: {starter_avg:.1f}")
+        
+        healthy_bench = [p for p in bench_players if not p['injured']]
+        if healthy_bench:
+            bench_avg = sum(p['avg_points'] for p in healthy_bench) / len(healthy_bench)
+            print(f"Average bench points: {bench_avg:.1f}")
+            
+            if bench_avg > starter_avg * 0.8:  # Bench within 80% of starters
+                print("⚠️ You have strong bench depth - consider trades!")
+            else:
+                print("✅ Clear separation between starters and bench")
 
 def generate_weekly_gameplan():
     """

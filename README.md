@@ -12,6 +12,8 @@ FantasyAI Pro is an advanced fantasy football analysis tool that uses the Sleepe
 - **Full Analysis Mode**: Comprehensive roster evaluation with position-specific swap suggestions
 - **Performance Analytics**: Track actual fantasy points to identify underperforming players
 - **Visual Performance Charts**: Weekly point charts showing trends for each roster player
+- **Enhanced Analysis**: NEW! Integrated injury tracking and trade target analysis
+- **Lineup Optimizer**: NEW! Compare bench vs starters with performance-based recommendations
 - **Weekly Game Plan Generator**: Comprehensive strategy planning after games complete
 - **Trending Analysis**: Real-time player movement tracking (adds/drops)
 - **Smart Filtering**: Only shows players actually available in your specific league
@@ -70,6 +72,18 @@ Analyzes actual fantasy points scored to identify consistently underperforming p
 python fantasyai_pro.py chart
 ```
 Creates visual charts showing weekly fantasy points for each player over recent weeks.
+
+### Enhanced Analysis with Injury & Trade Intelligence
+```bash
+python fantasyai_pro.py enhanced
+```
+Comprehensive analysis combining injury reports, trade targets, and strategic recommendations.
+
+### Lineup Optimizer (Performance-Based)
+```bash
+python fantasyai_pro.py lineup
+```
+Analyzes recent performance to recommend optimal starting lineup and identify bench players outperforming starters.
 
 ### Weekly Game Plan
 ```bash
